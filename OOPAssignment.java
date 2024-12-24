@@ -3,8 +3,8 @@ import java.util.*;
 
 class Main {
     public static void main(String[] args) {
-        Dog dog1 = new Dog("Tommy", "Dog", 2, HealthStatus.HEALTHY, true, "Labrador", true);
-        Bird bird1 = new Bird("Polly", "Parrot", 1, HealthStatus.HEALTHY, true, 2.5, true);
+        Dog dog1 = new Dog("Tommy", "Dog", 2, HealthStatus.HEALTHY, false, "Labrador", true);
+        Bird bird1 = new Bird("Polly", "Parrot", 1, HealthStatus.HEALTHY, false, 2.5, true);
         Cat cat1 = new Cat("Kitty", "Cat", 3, HealthStatus.UNHEALTHY, false, "White", true);
         Staff staff1 = new Staff(1, "John", Role.EMPLOYEE, new ArrayList<>());
         Adopter adopter1 = new Adopter(1, "Alice", "1234567890", new HashSet<>());
@@ -12,6 +12,7 @@ class Main {
         AnimalManager.addAnimals(bird1);
         AnimalManager.addAnimals(cat1);
         AnimalManager.viewAnimals();
+        AnimalManager.adoptAnimal(adopter1, dog1);
         AnimalManager.adoptAnimal(adopter1, dog1);
         AnimalManager.updateHealth(cat1, HealthStatus.HEALTHY);
         staff1.assign_task("Feed the animals");
@@ -255,6 +256,11 @@ class AnimalManager {
     }
     
     public static void adoptAnimal(Adopter adopter, Animal animal) {
+        if(animal.adoption_status) {
+            System.out.println("Animal is already adopted." + animal);
+            return;
+        }
+        animal.adoption_status = true;
         animals.remove(animal);
         adopter.adopt_animal(animal);
     }

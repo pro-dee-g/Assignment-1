@@ -1,7 +1,6 @@
 import java.util.HashSet;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-
 class Main {
     public static void main(String[] args) {
         Product product1 = new Product("Product1", 100, 10);
@@ -18,6 +17,7 @@ class Main {
         Customer customer1 = new Customer("Customer1", "customer1@gmail", "Address1");
         Customer customer2 = new Customer("Customer2", "customer2@gmail", "Address2");
         Customer customer3 = new Customer("Customer3", "customer3@gmail", "Address3");
+
         Set<Product> products = new HashSet<>();
         products.add(product1);
         products.add(product2);
@@ -31,13 +31,26 @@ class Main {
         products.add(product10);
         ProductManager productManager = new ProductManager(products);
 
-        Order order1 = new Order(Set.of(product1, product2), customer1, productManager);
-        Order order2 = new Order(Set.of(product3, product4), customer2, productManager);
-        Order order3 = new Order(Set.of(product5, product6), customer3, productManager);
-        order1.addProduct(new Product("Product1", 100, 5)); // Adding existing product with sufficient stock
+        Set<Product> order1Products = new HashSet<>();
+        order1Products.add(product1);
+        order1Products.add(product2);
+        Set<Product> order2Products = new HashSet<>();
+        order2Products.add(product3);
+        order2Products.add(product4);
+        Set<Product> order3Products = new HashSet<>();
+        order3Products.add(product5);
+        order3Products.add(product6);
+        Order order1 = new Order(order1Products, customer1, productManager);
+        Order order2 = new Order(order2Products, customer2, productManager);
+        Order order3 = new Order(order3Products, customer3, productManager);
+
+        order1.addProduct(new Product("Product1", 100, 15));
+
         Product product11 = new Product("Product11", 1100, 10);
+        order1.addProduct(new Product("Product1", 100, 5));
         productManager.add_product(product11);
         order1.addProduct(product11);
+
         OrderProcessor orderProcessor = new OrderProcessor();
         IPaymentProcessor creditCardProcessor = new CreditCardProcessor();
         IPaymentProcessor payPalProcessor = new PayPalProcessor();
@@ -112,20 +125,25 @@ class Product implements IStockManager {
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
-            return true;
+        return true;
         if (obj == null)
-            return false;
+        return false;
         if (getClass() != obj.getClass())
-            return false;
+        return false;
         Product other = (Product) obj;
         if (name == null) {
             if (other.name != null)
-                return false;
+            return false;
         } else if (!name.equals(other.name))
-            return false;
+        return false;
         if (Double.doubleToLongBits(price) != Double.doubleToLongBits(other.price))
-            return false;
+        return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Product [name=" + name + ", price=" + price + ", stock=" + stock + "]";
     }
 
     @Override
@@ -143,12 +161,10 @@ class Product implements IStockManager {
 
 class ProductManager {
     private Set<Product> products;
-    
+
     public ProductManager(Set<Product> products) {
         this.products = products;
     }
-
-    
 
     public void add_product(Product product) {
         if(products.contains(product)){
@@ -174,8 +190,7 @@ class ProductManager {
     }
 
     public boolean check_stock(Product product) {
-        return product.getStock() < products.stream().filter(prod -> prod.equals(product)).toList().get(0).getStock();
-           
+        return product.getStock() <= products.stream().filter(prod -> prod.equals(product)).findFirst().get().getStock();
     }
 
     public Set<Product> getProducts() {
@@ -237,8 +252,8 @@ class Order {
     
     public Order(Customer customer, ProductManager productManager) {
         this.customer = customer;
-        this.productManager = productManager;
         this.products = new HashSet<>();
+        this.productManager = productManager;
     }
 
     public Order(Set<Product> products, Customer customer, ProductManager productManager) {
@@ -248,16 +263,15 @@ class Order {
     }
 
     public void addProduct(Product product) {
-        List<Product> prodInProductManageer = productManager.getProducts().stream().filter(prod -> productManager.check_stock(prod)).toList();
-        if(!prodInProductManageer.isEmpty()) {
-            System.out.println("Not enough stock available");
+        if(!productManager.check_stock(product)) {
+            System.out.println("Not enough stock available for " + product);
             return;
         }   
-        List<Product> prodInOrder = productManager.getProducts().stream().filter(prod -> prod.equals(product)).toList();
-        if(prodInOrder.isEmpty()) {
+        Optional<Product> prodInOrder = products.stream().filter(prod -> prod.equals(product)).findFirst();
+        if(!prodInOrder.isPresent()) {
             products.add(product);
         } else{
-            prodInOrder.get(0).update_stock(product.getStock() + prodInOrder.get(0).getStock());
+            prodInOrder.get().update_stock(product.getStock() + prodInOrder.get().getStock());
         }
         productManager.remove_product(product);
     }
